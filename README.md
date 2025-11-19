@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# README Generator
 
-## Getting Started
+AI README builder for GitHub repositories, powered by Next.js App Router with live Markdown preview, streaming output, and multi-provider LLM support (OpenAI, Gemini, OpenRouter).
 
-First, run the development server:
+## Highlights
+- Streams polished READMEs from your repo content (multiple styles: light → deep).
+- Works with OpenAI GPT‑4o, Gemini 2.5 Flash, or OpenRouter (custom endpoint supported).
+- Fetches repo files via GitHub API with optional PAT to avoid rate limits/private repo issues.
+- Live preview with preview/raw/split views and one-click copy.
+- Settings modal keeps your API keys and endpoints in localStorage (never stored server-side).
 
+## Quickstart
+1) Install deps (Node 18+ recommended):
+```bash
+npm install
+```
+2) Run dev server:
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
+3) Open http://localhost:3000.
+4) Click **Settings**:
+   - Choose provider (`OpenAI`, `Gemini`, or `OpenRouter`).
+   - Enter API key.
+   - Optionally set a custom OpenRouter endpoint.
+   - Optionally add a GitHub PAT (needed for private repos or to raise rate limits).
+5) Paste a GitHub repo URL (e.g., `https://github.com/vercel/next.js`) and choose a style.
+6) (Optional) Add extra project context in “Additional Project Details”.
+7) Generate and copy the Markdown.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Providers
+- **OpenAI**: Streams from `gpt-4o` by default.
+- **Gemini**: Uses `gemini-2.5-flash` (non-streaming for stability; streamed to UI once parsed).
+- **OpenRouter**: Defaults to `anthropic/claude-3.5-sonnet`; accepts a custom endpoint. Sends required `HTTP-Referer`.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Architecture
+- UI: `app/page.js`, `components/GeneratorForm.js`, `components/LivePreview.js`, `components/SettingsModal.js`.
+- API: `app/api/generate/route.js` (Edge runtime). Builds prompt and streams LLM output.
+- GitHub fetch: `lib/github.js` parses/normalizes repo URLs, uses optional PAT, and fetches a curated set of files.
+- LLM client: `lib/llm.js` handles provider-specific payloads and streaming.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Testing
+```bash
+npm test -- --runInBand
+```
+Jest + Testing Library cover the form and settings flows.
 
-## Learn More
+## Deployment Notes
+- Next.js 16 App Router, Edge runtime for the generate endpoint.
+- Add your hosting env settings if you prefer env vars; the UI currently stores keys in localStorage.
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Troubleshooting
+- **Rate limited / 403 from GitHub**: Add a GitHub PAT in Settings.
+- **Private repo**: Requires PAT with read access.
+- **LLM errors**: Ensure the correct provider key/endpoint and enough quota.

@@ -12,9 +12,12 @@
 
 # testing
 /coverage
+/.nyc_output
 
 # next.js
 /.next/
+/.swc/
+/.turbo/
 /out/
 
 # production
@@ -23,6 +26,10 @@
 # misc
 .DS_Store
 *.pem
+.vscode/
+.vs/
+.idea/
+.eslintcache
 
 # debug
 npm-debug.log*
