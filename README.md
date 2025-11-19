@@ -3,9 +3,9 @@
 AI README builder for GitHub repositories, powered by Next.js App Router with live Markdown preview, streaming output, and multi-provider LLM support (OpenAI, Gemini, OpenRouter).
 
 ## Highlights
-- Streams polished READMEs from your repo content (multiple styles: light → deep).
-- Works with OpenAI GPT‑4o, Gemini 2.5 Flash, or OpenRouter (custom endpoint supported).
-- Fetches repo files via GitHub API with optional PAT to avoid rate limits/private repo issues.
+- Streams polished READMEs from your repo content (styles: light, simple, normal, medium, deep).
+- Works with OpenAI GPT-4o, Gemini 2.5 Flash, or OpenRouter (custom endpoint supported).
+- Fetches repo files via GitHub API with optional PAT to avoid rate limits or to read private repos.
 - Live preview with preview/raw/split views and one-click copy.
 - Settings modal keeps your API keys and endpoints in localStorage (never stored server-side).
 
@@ -30,7 +30,7 @@ npm run dev
 
 ## Providers
 - **OpenAI**: Streams from `gpt-4o` by default.
-- **Gemini**: Uses `gemini-2.5-flash` (non-streaming for stability; streamed to UI once parsed).
+- **Gemini**: Uses `gemini-2.5-flash` (non-streaming for stability; streamed to UI after parsing).
 - **OpenRouter**: Defaults to `anthropic/claude-3.5-sonnet`; accepts a custom endpoint. Sends required `HTTP-Referer`.
 
 ## Architecture
@@ -47,7 +47,7 @@ Jest + Testing Library cover the form and settings flows.
 
 ## Deployment Notes
 - Next.js 16 App Router, Edge runtime for the generate endpoint.
-- Add your hosting env settings if you prefer env vars; the UI currently stores keys in localStorage.
+- Add hosting env settings if you prefer env vars; the UI currently stores keys in localStorage.
 
 ## Troubleshooting
 - **Rate limited / 403 from GitHub**: Add a GitHub PAT in Settings.
