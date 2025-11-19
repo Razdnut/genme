@@ -9,6 +9,22 @@ AI README builder for GitHub repositories, powered by Next.js App Router with li
 - Live preview with preview/raw/split views and one-click copy.
 - Settings modal keeps your API keys and endpoints in localStorage (never stored server-side).
 
+## Docker (GHCR)
+- Image: `ghcr.io/razdnut/genme:latest` (published automatically from `main`).
+- Run:
+```bash
+docker run -p 3000:3000 ghcr.io/razdnut/genme:latest
+```
+- Docker Compose:
+```yaml
+services:
+  readme-generator:
+    image: ghcr.io/razdnut/genme:latest
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+```
+
 ## Quickstart
 1) Install deps (Node 18+ recommended):
 ```bash
@@ -48,6 +64,9 @@ Jest + Testing Library cover the form and settings flows.
 ## Deployment Notes
 - Next.js 16 App Router, Edge runtime for the generate endpoint.
 - Add hosting env settings if you prefer env vars; the UI currently stores keys in localStorage.
+- Docker workflow publishes to GHCR:
+  - `latest` on pushes to `main`.
+  - `v*` tags produce matching semver tags (and `major.minor`).
 
 ## Troubleshooting
 - **Rate limited / 403 from GitHub**: Add a GitHub PAT in Settings.
