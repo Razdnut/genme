@@ -1,4 +1,5 @@
 # README Generator
+<p align="center"><img width="600" height="300" alt="ChatGPT Image 20 nov 2025, 14_57_18" src="https://github.com/user-attachments/assets/09cec31e-11e9-44a8-a4cc-cf1eb2d13abe" /> </p>
 
 AI README builder for GitHub repositories, powered by Next.js App Router with live Markdown preview, streaming output, and multi-provider LLM support (OpenAI, Gemini, OpenRouter).
 
