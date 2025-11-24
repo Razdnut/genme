@@ -9,7 +9,7 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Run VibeGuard Auditor
-        uses: fabriziosalmi/vibe-check@v1
+        uses: razdnut/vibe-check@v1
         with:
           threshold: 800
       - name: Post Score to Slack
