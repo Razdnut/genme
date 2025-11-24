@@ -4,16 +4,106 @@ import { streamLLMResponse } from '@/lib/llm'
 
 export const runtime = 'edge' // Use Edge Runtime for streaming
 
+const ALLOWED_STYLES = ['light', 'simple', 'normal', 'medium', 'deep']
+const ALLOWED_PROVIDERS = ['openai', 'gemini', 'openrouter']
+const MAX_PROJECT_DETAILS_LENGTH = 2000
+const BLOCKED_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1'])
+const PRIVATE_IP_PATTERNS = [
+    /^10\./,
+    /^172\.(1[6-9]|2\d|3[0-1])\./,
+    /^192\.168\./,
+    /^169\.254\./,
+    /^0\./,
+    /^127\./,
+]
+const IPV4_HOST = /^\d{1,3}(?:\.\d{1,3}){3}$/
+
+const normalizeStyle = (style) => (ALLOWED_STYLES.includes(style) ? style : 'normal')
+
+const normalizeProvider = (provider) => (ALLOWED_PROVIDERS.includes(provider) ? provider : 'openai')
+
+const sanitizeProjectDetails = (details) => {
+    if (!details) return ''
+    const trimmed = details.toString().trim()
+    return trimmed.slice(0, MAX_PROJECT_DETAILS_LENGTH)
+}
+
+const isValidGithubUrl = (rawUrl) => {
+    if (!rawUrl) return false
+    try {
+        const parsed = new URL(rawUrl)
+        const hostname = parsed.hostname.replace(/^www\./, '')
+        if (hostname !== 'github.com') return false
+        const parts = parsed.pathname.replace(/\/+$/, '').split('/').filter(Boolean)
+        return parts.length >= 2
+    } catch {
+        return false
+    }
+}
+
+const validateCustomEndpoint = (endpoint) => {
+    if (!endpoint) return ''
+    let parsed
+    try {
+        parsed = new URL(endpoint)
+    } catch {
+        throw new Error('Custom endpoint must be a valid HTTPS URL.')
+    }
+
+    if (parsed.protocol !== 'https:') {
+        throw new Error('Custom endpoint must use HTTPS.')
+    }
+
+    const hostname = parsed.hostname.toLowerCase()
+    const isIpLiteral = IPV4_HOST.test(hostname) || hostname.includes(':')
+    if (BLOCKED_HOSTNAMES.has(hostname) || isIpLiteral || PRIVATE_IP_PATTERNS.some((pattern) => pattern.test(hostname))) {
+        throw new Error('Custom endpoint cannot target private or loopback hosts.')
+    }
+
+    parsed.hash = ''
+    return parsed.toString()
+}
+
 export async function POST(req) {
     try {
-        const { url, style, apiKey, provider, customEndpoint, projectDetails, githubToken } = await req.json() // Added projectDetails
+        const payload = await req.json()
+        const url = payload?.url?.trim()
+        const apiKey = payload?.apiKey?.trim()
 
         if (!url || !apiKey) {
             return NextResponse.json({ error: 'Missing URL or API Key' }, { status: 400 })
         }
 
+        if (!isValidGithubUrl(url)) {
+            return NextResponse.json({ error: 'Please provide a valid GitHub repository URL.' }, { status: 400 })
+        }
+
+        const provider = normalizeProvider(payload?.provider)
+        const style = normalizeStyle(payload?.style)
+        const projectDetails = sanitizeProjectDetails(payload?.projectDetails)
+        const githubToken = payload?.githubToken?.trim()
+
+        let customEndpoint = ''
+        if (provider === 'openrouter') {
+            try {
+                customEndpoint = validateCustomEndpoint(payload?.customEndpoint?.trim())
+            } catch (error) {
+                return NextResponse.json({ error: error.message }, { status: 400 })
+            }
+        }
+
         // 1. Fetch Repo Content
-        const repoData = await fetchRepoContent(url, githubToken)
+        let repoData
+        try {
+            repoData = await fetchRepoContent(url, githubToken)
+        } catch (error) {
+            console.error('GitHub fetch error:', error?.message || error)
+            const status = error?.message?.toLowerCase().includes('invalid github url') ? 400 : 502
+            return NextResponse.json(
+                { error: 'Unable to fetch repository data. Verify the URL and GitHub token.' },
+                { status }
+            )
+        }
 
         // 2. Construct Prompt
         const fileContext = repoData.files.map(f => `File: ${f.path}\n\`\`\`\n${f.content}\n\`\`\``).join('\n\n')
@@ -26,7 +116,6 @@ export async function POST(req) {
             deep: "Extremely comprehensive. Deep dive into architecture, design choices, full API docs, testing, and deployment."
         }
 
-        // Conditionally add projectDetails to the prompt
         const projectDetailsPrompt = projectDetails ? `
         Additional project details provided by the user:
         ${projectDetails}
@@ -60,7 +149,7 @@ export async function POST(req) {
         })
 
     } catch (error) {
-        console.error('Generation Error:', error)
-        return NextResponse.json({ error: error.message || 'Unexpected error while generating README' }, { status: 500 })
+        console.error('Generation Error:', error?.message || error)
+        return NextResponse.json({ error: 'Unexpected error while generating README' }, { status: 500 })
     }
 }
