@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'; // Removed useEffect
+import { useState } from 'react';
 import { X, Save, Key } from 'lucide-react';
 
 /**

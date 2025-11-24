@@ -29,13 +29,7 @@ describe('SettingsModal', () => {
     localStorageMock.clear();
     mockOnClose.mockClear();
     mockOnSave.mockClear();
-    // jest.useFakeTimers(); // No longer needed as setTimeout is removed from component
   });
-
-  // afterEach(() => {
-  //   jest.runOnlyPendingTimers();
-  //   jest.useRealTimers();
-  // });
 
   test('does not render when isOpen is false', () => {
     render(<SettingsModal isOpen={false} onClose={mockOnClose} onSave={mockOnSave} initialSettings={defaultInitialSettings} />);
