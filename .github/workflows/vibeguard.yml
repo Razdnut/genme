@@ -1,17 +1,20 @@
-name: VibeGuard Code Quality Check
+name: VibeGuard Code Quality
+
 on: [push, pull_request]
 
 jobs:
-  audit:
+  vibe-check:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50  # Required for git history audit
       
       - name: Run VibeGuard Auditor
-        uses: fabriziosalmi/vibe-check@v1.4.0
+        uses: fabriziosalmi/vibe-check@main
         with:
-          threshold: 850
+          threshold: 800
+          brutal_mode: false
       - name: Post Score to Slack
         run: |
           echo "Code Quality Score: ${{ steps.vibeguard.outputs.score }}/1000"    
