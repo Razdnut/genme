@@ -6,12 +6,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
       
       - name: Run VibeGuard Auditor
-        uses: razdnut/vibe-check@v1
+        uses: fabriziosalmi/vibe-check@v1
         with:
-          threshold: 800
+          threshold: 850
       - name: Post Score to Slack
         run: |
           echo "Code Quality Score: ${{ steps.vibeguard.outputs.score }}/1000"    
