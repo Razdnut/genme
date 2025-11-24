@@ -35,7 +35,7 @@ npm install
 ```bash
 npm run dev
 ```
-3) Open http://localhost:3000.
+3) Open your browser to the dev server on port 3000.
 4) Click **Settings**:
    - Choose provider (`OpenAI`, `Gemini`, or `OpenRouter`).
    - Enter API key.

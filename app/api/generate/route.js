@@ -64,6 +64,9 @@ const validateCustomEndpoint = (endpoint) => {
     return parsed.toString()
 }
 
+/**
+ * Handle README generation requests with input validation and streaming response.
+ */
 export async function POST(req) {
     try {
         const payload = await req.json()
@@ -134,7 +137,7 @@ export async function POST(req) {
       - Use proper Markdown formatting.
       - Include badges if possible.
       - Make it look professional and polished.
-      - Do not include the file contents I gave you in the output, just use them to understand the code.
+      - Use the file contents only for context; do not repeat them verbatim in the output.
     `
 
         // 3. Stream Response

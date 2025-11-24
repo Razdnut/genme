@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { Wand2, Github } from 'lucide-react';
 
+/**
+ * Collects repository URL, preferred README style, and optional details before triggering generation.
+ */
 export default function GeneratorForm({ onGenerate, isGenerating }) {
     const [url, setUrl] = useState('');
     const [style, setStyle] = useState('normal');

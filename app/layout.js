@@ -8,6 +8,9 @@ export const metadata = {
   description: 'Generate premium READMEs for your GitHub repositories using AI.',
 }
 
+/**
+ * Root layout wiring global styles, fonts, and metadata.
+ */
 export default function RootLayout({ children }) {
   return (
     <html lang="en">

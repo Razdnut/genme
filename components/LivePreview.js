@@ -5,6 +5,9 @@ import ReactMarkdown from 'react-markdown'
 import { Eye, Code, Copy, Check } from 'lucide-react'
 import clsx from 'clsx'
 
+/**
+ * Displays generated README content in preview/raw/split views with copy-to-clipboard controls.
+ */
 export default function LivePreview({ content }) {
     const [activeTab, setActiveTab] = useState('preview') // 'preview' | 'raw' | 'split'
     const [copied, setCopied] = useState(false)

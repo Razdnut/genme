@@ -3,6 +3,9 @@
 import { useState } from 'react'; // Removed useEffect
 import { X, Save, Key } from 'lucide-react';
 
+/**
+ * Modal for selecting provider configuration, API keys, and GitHub token stored client-side.
+ */
 export default function SettingsModal({ isOpen, onClose, onSave, initialSettings }) {
     // Initialize state directly from initialSettings or default values
     const [provider, setProvider] = useState(initialSettings?.provider || 'openai');

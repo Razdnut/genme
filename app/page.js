@@ -6,6 +6,9 @@ import SettingsModal from '@/components/SettingsModal'
 import GeneratorForm from '@/components/GeneratorForm'
 import LivePreview from '@/components/LivePreview'
 
+/**
+ * Main page layout orchestrating settings, form submission, and live README preview.
+ */
 export default function Home() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [generatedContent, setGeneratedContent] = useState('')
