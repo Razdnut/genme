@@ -13,8 +13,67 @@ export default function SettingsModal({ isOpen, onClose, onSave, initialSettings
     const [customEndpoint, setCustomEndpoint] = useState(initialSettings?.customEndpoint || '');
     const [githubToken, setGithubToken] = useState(initialSettings?.githubToken || '');
 
-    const handleSave = () => {
-        const settings = { provider, apiKey, customEndpoint, githubToken };
+
+    // Demo passphrase for encryption. In production, prompt user or derive securely.
+    const ENCRYPTION_KEY = 'SuperSecretDemoPassphrase123!';
+
+    // Helper: encrypt text with AES-GCM via Web Crypto API
+    async function encryptData(text, key) {
+        // Derive key from passphrase (PBKDF2)
+        const enc = new TextEncoder();
+        const salt = window.crypto.getRandomValues(new Uint8Array(16));
+        const baseKey = await window.crypto.subtle.importKey(
+            'raw',
+            enc.encode(key),
+            { name: 'PBKDF2' },
+            false,
+            ['deriveKey']
+        );
+        const derivedKey = await window.crypto.subtle.deriveKey(
+            {
+                "name": "PBKDF2",
+                salt,
+                iterations: 100000,
+                hash: "SHA-256"
+            },
+            baseKey,
+            { name: 'AES-GCM', length: 256 },
+            false,
+            ['encrypt']
+        );
+        const iv = window.crypto.getRandomValues(new Uint8Array(12));
+        const encrypted = await window.crypto.subtle.encrypt(
+            {
+                name: 'AES-GCM',
+                iv
+            },
+            derivedKey,
+            enc.encode(text)
+        );
+        // Store salt and iv with data
+        return btoa(
+            JSON.stringify({
+                ciphertext: Array.from(new Uint8Array(encrypted)),
+                iv: Array.from(iv),
+                salt: Array.from(salt),
+            })
+        );
+    }
+
+    const handleSave = async () => {
+        // Encrypt apiKey and githubToken before storing
+        const encryptedApiKey = apiKey
+            ? await encryptData(apiKey, ENCRYPTION_KEY)
+            : '';
+        const encryptedGithubToken = githubToken
+            ? await encryptData(githubToken, ENCRYPTION_KEY)
+            : '';
+        const settings = {
+            provider,
+            apiKey: encryptedApiKey,
+            customEndpoint,
+            githubToken: encryptedGithubToken
+        };
         localStorage.setItem('readme_gen_settings', JSON.stringify(settings));
         onSave(settings);
         onClose();
@@ -84,7 +143,7 @@ export default function SettingsModal({ isOpen, onClose, onSave, initialSettings
                         />
                     </div>
                     <button
-                        onClick={handleSave}
+                        onClick={() => handleSave()}
                         className="btn-primary w-full flex items-center justify-center gap-2 mt-4"
                     >
                         <Save size={18} />
