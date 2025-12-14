@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { Eye, Code, Copy, Check } from 'lucide-react'
 import clsx from 'clsx'
@@ -17,6 +17,13 @@ export default function LivePreview({ content }) {
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)
     }
+
+    // Bolt ⚡: Memoize the Markdown rendering to prevent re-renders on tab change.
+    // This is a significant performance improvement when dealing with large documents,
+    // as it avoids re-parsing and re-rendering the entire Markdown tree.
+    const memoizedMarkdown = useMemo(() => {
+        return content ? <ReactMarkdown>{content}</ReactMarkdown> : null;
+    }, [content]);
 
     return (
         <div className="glass-panel rounded-xl overflow-hidden flex flex-col h-[600px] w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -69,7 +76,7 @@ export default function LivePreview({ content }) {
                     activeTab === 'preview' ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
                 )}>
                     <div className="prose prose-invert max-w-none prose-headings:text-gray-100 prose-a:text-blue-400 prose-code:text-pink-400 prose-pre:bg-black/50 prose-pre:border prose-pre:border-white/10">
-                        {content ? <ReactMarkdown>{content}</ReactMarkdown> : (
+                        {memoizedMarkdown || (
                             <div className="flex flex-col items-center justify-center h-full text-gray-500 opacity-50">
                                 <Eye size={48} className="mb-4" />
                                 <p>Generated README will appear here</p>
@@ -100,7 +107,7 @@ export default function LivePreview({ content }) {
                     </div>
                     <div className="w-1/2 h-full overflow-auto p-6">
                         <div className="prose prose-invert max-w-none prose-headings:text-gray-100 prose-pre:bg-black/50">
-                            {content ? <ReactMarkdown>{content}</ReactMarkdown> : (
+                            {memoizedMarkdown || (
                                 <div className="flex flex-col items-center justify-center h-full text-gray-500 opacity-50">
                                     <Eye size={48} className="mb-4" />
                                     <p>Preview</p>

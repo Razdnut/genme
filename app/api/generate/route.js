@@ -7,6 +7,8 @@ export const runtime = 'edge' // Use Edge Runtime for streaming
 const ALLOWED_STYLES = ['light', 'simple', 'normal', 'medium', 'deep']
 const ALLOWED_PROVIDERS = ['openai', 'gemini', 'openrouter']
 const MAX_PROJECT_DETAILS_LENGTH = 2000
+const MAX_URL_LENGTH = 2048
+const MAX_SECRET_LENGTH = 256
 const BLOCKED_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1'])
 const PRIVATE_IP_PATTERNS = [
     /^10\./,
@@ -24,21 +26,25 @@ const normalizeProvider = (provider) => (ALLOWED_PROVIDERS.includes(provider) ? 
 
 const sanitizeProjectDetails = (details) => {
     if (!details) return ''
-    const trimmed = details.toString().trim()
+    const trimmed = details
+        .toString()
+        .replace(/[\u0000-\u001F\u007F]/g, '')
+        .trim()
+
     return trimmed.slice(0, MAX_PROJECT_DETAILS_LENGTH)
 }
 
 const isValidGithubUrl = (rawUrl) => {
-    if (!rawUrl) return false
-    try {
-        const parsed = new URL(rawUrl)
-        const hostname = parsed.hostname.replace(/^www\./, '')
-        if (hostname !== 'github.com') return false
-        const parts = parsed.pathname.replace(/\/+$/, '').split('/').filter(Boolean)
-        return parts.length >= 2
-    } catch {
-        return false
-    }
+  if (!rawUrl) return false
+  try {
+    const parsed = new URL(rawUrl)
+    const hostname = parsed.hostname.replace(/^www\./, '')
+    if (hostname !== 'github.com' || parsed.protocol !== 'https:') return false
+    const parts = parsed.pathname.replace(/\/+$/, '').split('/').filter(Boolean)
+    return parts.length >= 2
+  } catch {
+    return false
+  }
 }
 
 const validateCustomEndpoint = (endpoint) => {
@@ -64,16 +70,42 @@ const validateCustomEndpoint = (endpoint) => {
     return parsed.toString()
 }
 
+const sanitizeSecret = (secret, label) => {
+  if (!secret) return ''
+  const normalized = secret.toString().trim()
+  if (normalized.length > MAX_SECRET_LENGTH) {
+    throw new Error(`${label} is too long.`)
+  }
+  if (/[\u0000-\u001F\u007F]/.test(normalized)) {
+    throw new Error(`${label} contains invalid characters.`)
+  }
+  return normalized
+}
+
 /**
  * Handle README generation requests with input validation and streaming response.
  */
 export async function POST(req) {
     try {
+        const contentType = req.headers.get('content-type') || ''
+        if (!contentType.includes('application/json')) {
+            return NextResponse.json({ error: 'Content-Type must be application/json' }, { status: 415 })
+        }
+
         const payload = await req.json()
         const url = payload?.url?.trim()
-        const apiKey = payload?.apiKey?.trim()
+        if (!url || url.length > MAX_URL_LENGTH) {
+            return NextResponse.json({ error: 'Missing URL or URL is too long' }, { status: 400 })
+        }
 
-        if (!url || !apiKey) {
+        let apiKey
+        try {
+            apiKey = sanitizeSecret(payload?.apiKey, 'API key')
+        } catch (error) {
+            return NextResponse.json({ error: error.message }, { status: 400 })
+        }
+
+        if (!apiKey) {
             return NextResponse.json({ error: 'Missing URL or API Key' }, { status: 400 })
         }
 
@@ -84,7 +116,12 @@ export async function POST(req) {
         const provider = normalizeProvider(payload?.provider)
         const style = normalizeStyle(payload?.style)
         const projectDetails = sanitizeProjectDetails(payload?.projectDetails)
-        const githubToken = payload?.githubToken?.trim()
+        let githubToken = ''
+        try {
+            githubToken = sanitizeSecret(payload?.githubToken, 'GitHub token')
+        } catch (error) {
+            return NextResponse.json({ error: error.message }, { status: 400 })
+        }
 
         let customEndpoint = ''
         if (provider === 'openrouter') {

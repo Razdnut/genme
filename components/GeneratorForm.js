@@ -78,6 +78,7 @@ export default function GeneratorForm({ onGenerate, isGenerating }) {
                         onChange={handleUrlChange}
                         placeholder="https://github.com/username/repo"
                         required
+                        autoFocus
                         className={`input-field pl-12 ${urlError ? 'border-red-500 focus:border-red-500' : ''}`}
                     />
                 </div>
