@@ -14,65 +14,16 @@ export default function SettingsModal({ isOpen, onClose, onSave, initialSettings
     const [githubToken, setGithubToken] = useState(initialSettings?.githubToken || '');
 
 
-    // Demo passphrase for encryption. In production, prompt user or derive securely.
-    const ENCRYPTION_KEY = 'SuperSecretDemoPassphrase123!';
-
-    // Helper: encrypt text with AES-GCM via Web Crypto API
-    async function encryptData(text, key) {
-        // Derive key from passphrase (PBKDF2)
-        const enc = new TextEncoder();
-        const salt = window.crypto.getRandomValues(new Uint8Array(16));
-        const baseKey = await window.crypto.subtle.importKey(
-            'raw',
-            enc.encode(key),
-            { name: 'PBKDF2' },
-            false,
-            ['deriveKey']
-        );
-        const derivedKey = await window.crypto.subtle.deriveKey(
-            {
-                "name": "PBKDF2",
-                salt,
-                iterations: 100000,
-                hash: "SHA-256"
-            },
-            baseKey,
-            { name: 'AES-GCM', length: 256 },
-            false,
-            ['encrypt']
-        );
-        const iv = window.crypto.getRandomValues(new Uint8Array(12));
-        const encrypted = await window.crypto.subtle.encrypt(
-            {
-                name: 'AES-GCM',
-                iv
-            },
-            derivedKey,
-            enc.encode(text)
-        );
-        // Store salt and iv with data
-        return btoa(
-            JSON.stringify({
-                ciphertext: Array.from(new Uint8Array(encrypted)),
-                iv: Array.from(iv),
-                salt: Array.from(salt),
-            })
-        );
-    }
-
-    const handleSave = async () => {
-        // Encrypt apiKey and githubToken before storing
-        const encryptedApiKey = apiKey
-            ? await encryptData(apiKey, ENCRYPTION_KEY)
-            : '';
-        const encryptedGithubToken = githubToken
-            ? await encryptData(githubToken, ENCRYPTION_KEY)
-            : '';
+    const handleSave = () => {
+        // 🚨 SECURITY WARNING: Storing API keys in localStorage is not recommended for production applications.
+        // This makes them vulnerable to Cross-Site Scripting (XSS) attacks. For a production-grade solution,
+        // consider storing keys in a secure backend and using a session-based authentication mechanism.
+        // This implementation is for demonstration purposes only.
         const settings = {
             provider,
-            apiKey: encryptedApiKey,
+            apiKey,
             customEndpoint,
-            githubToken: encryptedGithubToken
+            githubToken
         };
         localStorage.setItem('readme_gen_settings', JSON.stringify(settings));
         onSave(settings);
