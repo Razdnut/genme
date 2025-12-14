@@ -15,17 +15,12 @@ export default function SettingsModal({ isOpen, onClose, onSave, initialSettings
 
 
     const handleSave = () => {
-        // 🚨 SECURITY WARNING: Storing API keys in localStorage is not recommended for production applications.
-        // This makes them vulnerable to Cross-Site Scripting (XSS) attacks. For a production-grade solution,
-        // consider storing keys in a secure backend and using a session-based authentication mechanism.
-        // This implementation is for demonstration purposes only.
         const settings = {
             provider,
             apiKey,
             customEndpoint,
             githubToken
         };
-        localStorage.setItem('readme_gen_settings', JSON.stringify(settings));
         onSave(settings);
         onClose();
     };

@@ -6,6 +6,49 @@ import SettingsModal from '@/components/SettingsModal'
 import GeneratorForm from '@/components/GeneratorForm'
 import LivePreview from '@/components/LivePreview'
 
+const DEFAULT_SETTINGS = {
+  provider: 'openai',
+  apiKey: '',
+  customEndpoint: '',
+  githubToken: ''
+}
+
+const sanitizeSettings = (settings = {}) => {
+  const safeString = value => {
+    if (typeof value !== 'string') return ''
+    const trimmed = value.replace(/[\u0000-\u001F\u007F]/g, '').trim()
+    return trimmed.slice(0, 256)
+  }
+
+  const provider = ['openai', 'gemini', 'openrouter'].includes(settings.provider)
+    ? settings.provider
+    : DEFAULT_SETTINGS.provider
+
+  return {
+    provider,
+    apiKey: safeString(settings.apiKey),
+    customEndpoint: provider === 'openrouter' ? safeString(settings.customEndpoint) : '',
+    githubToken: safeString(settings.githubToken)
+  }
+}
+
+const loadStoredSettings = () => {
+  try {
+    const storedSettings = localStorage.getItem('readme_gen_settings')
+    if (!storedSettings) return DEFAULT_SETTINGS
+
+    const parsed = JSON.parse(storedSettings)
+    return {
+      ...DEFAULT_SETTINGS,
+      ...sanitizeSettings(parsed)
+    }
+  } catch (error) {
+    console.warn('Ignoring invalid stored settings', error)
+    localStorage.removeItem('readme_gen_settings')
+    return DEFAULT_SETTINGS
+  }
+}
+
 /**
  * Main page layout orchestrating settings, form submission, and live README preview.
  */
@@ -13,25 +56,23 @@ export default function Home() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [generatedContent, setGeneratedContent] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
-  const [apiSettings, setApiSettings] = useState({
-    provider: 'openai',
-    apiKey: '',
-    customEndpoint: '',
-    githubToken: ''
-  })
+  const [apiSettings, setApiSettings] = useState(DEFAULT_SETTINGS)
 
   useEffect(() => {
     // Only run once on component mount to load initial settings
-    const storedSettings = localStorage.getItem('readme_gen_settings');
-    if (storedSettings) {
-      setApiSettings(prevSettings => ({
-          ...prevSettings, // Keep any default settings not present in stored
-          ...JSON.parse(storedSettings) // Overwrite with stored settings
-      }));
-    }
-  }, []); // Empty dependency array means this effect runs once on mount
+    setApiSettings(loadStoredSettings())
+  }, []) // Empty dependency array means this effect runs once on mount
+
+  const handleSettingsSave = newSettings => {
+    const sanitized = sanitizeSettings(newSettings)
+    localStorage.setItem('readme_gen_settings', JSON.stringify(sanitized))
+    setApiSettings(sanitized)
+    setIsSettingsOpen(false)
+  }
 
   const handleGenerate = async ({ url, style, projectDetails }) => {
+    const safeSettings = sanitizeSettings(apiSettings)
+
     setIsGenerating(true)
     setGeneratedContent('') // Clear previous content
 
@@ -43,10 +84,10 @@ export default function Home() {
           url,
           style,
           projectDetails,
-          apiKey: apiSettings?.apiKey,
-          provider: apiSettings?.provider,
-          customEndpoint: apiSettings?.customEndpoint,
-          githubToken: apiSettings?.githubToken
+          apiKey: safeSettings.apiKey,
+          provider: safeSettings.provider,
+          customEndpoint: safeSettings.customEndpoint,
+          githubToken: safeSettings.githubToken
         })
       })
 
@@ -79,7 +120,7 @@ export default function Home() {
         <SettingsModal
           isOpen={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}
-          onSave={setApiSettings}
+          onSave={handleSettingsSave}
           initialSettings={apiSettings}
           key={isSettingsOpen ? 'settings-modal-open' : 'settings-modal-closed'}
         />
