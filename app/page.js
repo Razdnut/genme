@@ -13,7 +13,7 @@ const DEFAULT_SETTINGS = {
   githubToken: ''
 }
 
-const sanitizeSettings = (settings = {}) => {
+const sanitizeSettings = (settings = {}, { includeSecrets = true } = {}) => {
   const safeString = value => {
     if (typeof value !== 'string') return ''
     const trimmed = value.replace(/[\u0000-\u001F\u007F]/g, '').trim()
@@ -24,12 +24,20 @@ const sanitizeSettings = (settings = {}) => {
     ? settings.provider
     : DEFAULT_SETTINGS.provider
 
-  return {
+  const sanitized = {
     provider,
-    apiKey: safeString(settings.apiKey),
-    customEndpoint: provider === 'openrouter' ? safeString(settings.customEndpoint) : '',
-    githubToken: safeString(settings.githubToken)
+    customEndpoint: provider === 'openrouter' ? safeString(settings.customEndpoint) : ''
   }
+
+  if (includeSecrets) {
+    sanitized.apiKey = safeString(settings.apiKey)
+    sanitized.githubToken = safeString(settings.githubToken)
+  } else {
+    sanitized.apiKey = ''
+    sanitized.githubToken = ''
+  }
+
+  return sanitized
 }
 
 const loadStoredSettings = () => {
@@ -40,7 +48,7 @@ const loadStoredSettings = () => {
     const parsed = JSON.parse(storedSettings)
     return {
       ...DEFAULT_SETTINGS,
-      ...sanitizeSettings(parsed)
+      ...sanitizeSettings(parsed, { includeSecrets: false })
     }
   } catch (error) {
     console.warn('Ignoring invalid stored settings', error)
@@ -65,7 +73,9 @@ export default function Home() {
 
   const handleSettingsSave = newSettings => {
     const sanitized = sanitizeSettings(newSettings)
-    localStorage.setItem('readme_gen_settings', JSON.stringify(sanitized))
+    const persistableSettings = sanitizeSettings(newSettings, { includeSecrets: false })
+
+    localStorage.setItem('readme_gen_settings', JSON.stringify(persistableSettings))
     setApiSettings(sanitized)
     setIsSettingsOpen(false)
   }
