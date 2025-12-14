@@ -21,6 +21,14 @@ export default function SettingsModal({ isOpen, onClose, onSave, initialSettings
             customEndpoint,
             githubToken
         };
+
+        if (typeof window !== 'undefined' && window?.localStorage) {
+            window.localStorage.setItem(
+                'readme_gen_settings',
+                JSON.stringify(settings)
+            );
+        }
+
         onSave(settings);
         onClose();
     };
