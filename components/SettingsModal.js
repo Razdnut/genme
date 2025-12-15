@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { X, Save, Key } from 'lucide-react';
 
 /**
@@ -12,6 +12,19 @@ export default function SettingsModal({ isOpen, onClose, onSave, initialSettings
     const [apiKey, setApiKey] = useState(initialSettings?.apiKey || '');
     const [customEndpoint, setCustomEndpoint] = useState(initialSettings?.customEndpoint || '');
     const [githubToken, setGithubToken] = useState(initialSettings?.githubToken || '');
+
+
+    useEffect(() => {
+        const nextProvider = initialSettings?.provider || 'openai';
+        const nextApiKey = initialSettings?.apiKey || '';
+        const nextCustomEndpoint = initialSettings?.customEndpoint || '';
+        const nextGithubToken = initialSettings?.githubToken || '';
+
+        setProvider((current) => (current === nextProvider ? current : nextProvider));
+        setApiKey((current) => (current === nextApiKey ? current : nextApiKey));
+        setCustomEndpoint((current) => (current === nextCustomEndpoint ? current : nextCustomEndpoint));
+        setGithubToken((current) => (current === nextGithubToken ? current : nextGithubToken));
+    }, [initialSettings]);
 
 
     const handleSave = () => {
