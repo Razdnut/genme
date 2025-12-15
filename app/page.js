@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Settings } from 'lucide-react'
+import { useDebouncedState } from '@/lib/hooks'
 import SettingsModal from '@/components/SettingsModal'
 import GeneratorForm from '@/components/GeneratorForm'
 import LivePreview from '@/components/LivePreview'
@@ -62,7 +63,10 @@ const loadStoredSettings = () => {
  */
 export default function Home() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [generatedContent, setGeneratedContent] = useState('')
+    // Bolt ⚡: Debounce the generated content to prevent re-renders on every streaming chunk.
+    // This improves performance by batching updates and rendering the markdown less frequently,
+    // resulting in a smoother user experience.
+  const [generatedContent, setGeneratedContent] = useDebouncedState('', 200)
   const [isGenerating, setIsGenerating] = useState(false)
   const [apiSettings, setApiSettings] = useState(DEFAULT_SETTINGS)
 
@@ -84,7 +88,7 @@ export default function Home() {
     const safeSettings = sanitizeSettings(apiSettings)
 
     setIsGenerating(true)
-    setGeneratedContent('') // Clear previous content
+    setGeneratedContent('', true)
 
     try {
       const response = await fetch('/api/generate', {
@@ -108,17 +112,19 @@ export default function Home() {
 
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
+      let accumulatedContent = ''
 
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
         const text = decoder.decode(value)
-        setGeneratedContent(prev => prev + text)
+        accumulatedContent += text
+        setGeneratedContent(accumulatedContent)
       }
 
     } catch (error) {
       console.error('Generation error details:', error)
-      setGeneratedContent(`# Error\n${error.message || 'Failed to generate README. Please check your settings and try again.'}`)
+      setGeneratedContent(`# Error\n${error.message || 'Failed to generate README. Please check your settings and try again.'}`, true)
     } finally {
       setIsGenerating(false)
     }
