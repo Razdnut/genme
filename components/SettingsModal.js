@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { X, Save, Key } from 'lucide-react';
 
 /**
@@ -13,6 +13,18 @@ export default function SettingsModal({ isOpen, onClose, onSave, initialSettings
     const [customEndpoint, setCustomEndpoint] = useState(initialSettings?.customEndpoint || '');
     const [githubToken, setGithubToken] = useState(initialSettings?.githubToken || '');
 
+    useEffect(() => {
+        const nextProvider = initialSettings?.provider || 'openai';
+        const nextApiKey = initialSettings?.apiKey || '';
+        const nextCustomEndpoint = initialSettings?.customEndpoint || '';
+        const nextGithubToken = initialSettings?.githubToken || '';
+
+        setProvider((prev) => (prev !== nextProvider ? nextProvider : prev));
+        setApiKey((prev) => (prev !== nextApiKey ? nextApiKey : prev));
+        setCustomEndpoint((prev) => (prev !== nextCustomEndpoint ? nextCustomEndpoint : prev));
+        setGithubToken((prev) => (prev !== nextGithubToken ? nextGithubToken : prev));
+    }, [initialSettings?.provider, initialSettings?.apiKey, initialSettings?.customEndpoint, initialSettings?.githubToken]);
+
 
     const handleSave = () => {
         const settings = {
@@ -21,13 +33,6 @@ export default function SettingsModal({ isOpen, onClose, onSave, initialSettings
             customEndpoint,
             githubToken
         };
-
-        if (typeof window !== 'undefined' && window?.localStorage) {
-            window.localStorage.setItem(
-                'readme_gen_settings',
-                JSON.stringify(settings)
-            );
-        }
 
         onSave(settings);
         onClose();
