@@ -2,31 +2,12 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import SettingsModal from './SettingsModal';
 
-// Mock localStorage
-const localStorageMock = (function () {
-  let store = {};
-  return {
-    getItem: jest.fn((key) => store[key] || null),
-    setItem: jest.fn((key, value) => {
-      store[key] = value.toString();
-    }),
-    clear: jest.fn(() => {
-      store = {};
-    }),
-  };
-})();
-
-Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock,
-});
-
 describe('SettingsModal', () => {
   const mockOnClose = jest.fn();
   const mockOnSave = jest.fn();
   const defaultInitialSettings = { provider: 'openai', apiKey: '', customEndpoint: '', githubToken: '' };
 
   beforeEach(() => {
-    localStorageMock.clear();
     mockOnClose.mockClear();
     mockOnSave.mockClear();
   });
@@ -73,6 +54,33 @@ describe('SettingsModal', () => {
     expect(screen.getByPlaceholderText(/Enter your openrouter API key/i)).toHaveValue('test-api-key');
     expect(screen.getByDisplayValue('https://custom.endpoint')).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/Use a PAT to access private repos or avoid rate limits/i)).toHaveValue('ghp_123');
+  });
+
+  test('syncs modal fields when initialSettings changes', async () => {
+    const { rerender } = render(
+      <SettingsModal isOpen={true} onClose={mockOnClose} onSave={mockOnSave} initialSettings={defaultInitialSettings} />
+    );
+
+    expect(screen.getByPlaceholderText(/Enter your openai API key/i)).toHaveValue('');
+    expect(screen.queryByLabelText('Custom Endpoint (Optional)')).not.toBeInTheDocument();
+
+    const updatedSettings = {
+      provider: 'openrouter',
+      apiKey: 'synced-key',
+      customEndpoint: 'https://openrouter.ai/api/v1',
+      githubToken: 'ghp_synced',
+    };
+
+    await act(async () => {
+      rerender(
+        <SettingsModal isOpen={true} onClose={mockOnClose} onSave={mockOnSave} initialSettings={updatedSettings} />
+      );
+    });
+
+    expect(screen.getByDisplayValue('OpenRouter')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Enter your openrouter API key/i)).toHaveValue('synced-key');
+    expect(screen.getByDisplayValue('https://openrouter.ai/api/v1')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Use a PAT to access private repos or avoid rate limits/i)).toHaveValue('ghp_synced');
   });
 
   test('updates state on user input', async () => {
@@ -130,15 +138,6 @@ describe('SettingsModal', () => {
       fireEvent.click(saveButton);
     });
 
-    expect(localStorageMock.setItem).toHaveBeenCalledWith(
-      'readme_gen_settings',
-      JSON.stringify({
-        provider: 'gemini',
-        apiKey: 'final-api-key',
-        customEndpoint: '', // Default if not changed
-        githubToken: 'ghp_final',
-      })
-    );
     expect(mockOnSave).toHaveBeenCalledWith({
       provider: 'gemini',
       apiKey: 'final-api-key',
