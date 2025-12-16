@@ -98,24 +98,33 @@ export default function GeneratorForm({ onGenerate, isGenerating }) {
                 ></textarea>
             </div>
 
-            <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300">README Style</label>
+            <fieldset className="space-y-2">
+                <legend className="block text-sm font-medium text-gray-300">README Style</legend>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                     {['light', 'simple', 'normal', 'medium', 'deep'].map((s) => (
-                        <button
-                            key={s}
-                            type="button"
-                            onClick={() => setStyle(s)}
-                            className={`flex items-center justify-center px-3 py-2 rounded-lg text-sm font-medium transition-all capitalize border ${style === s
-                                ? 'bg-primary/20 border-primary text-primary shadow-[0_0_10px_rgba(139,92,246,0.3)]'
-                                : 'bg-black/20 border-transparent text-gray-400 hover:bg-white/5 hover:text-gray-200'
-                                } focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900`}
-                        >
-                            {s}
-                        </button>
+                        <div key={s}>
+                            <input
+                                type="radio"
+                                id={`style-${s}`}
+                                name="style"
+                                value={s}
+                                checked={style === s}
+                                onChange={() => setStyle(s)}
+                                className="sr-only"
+                            />
+                            <label
+                                htmlFor={`style-${s}`}
+                                className={`cursor-pointer flex items-center justify-center px-3 py-2 rounded-lg text-sm font-medium transition-all capitalize border ${style === s
+                                    ? 'bg-primary/20 border-primary text-primary shadow-[0_0_10px_rgba(139,92,246,0.3)]'
+                                    : 'bg-black/20 border-transparent text-gray-400 hover:bg-white/5 hover:text-gray-200'
+                                    } focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900`}
+                            >
+                                {s}
+                            </label>
+                        </div>
                     ))}
                 </div>
-            </div>
+            </fieldset>
 
             <button
                 type="submit"
