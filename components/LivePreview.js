@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
+import rehypeSanitize from 'rehype-sanitize'
 import { Eye, Code, Copy, Check } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -22,7 +23,7 @@ export default function LivePreview({ content }) {
     // This is a significant performance improvement when dealing with large documents,
     // as it avoids re-parsing and re-rendering the entire Markdown tree.
     const memoizedMarkdown = useMemo(() => {
-        return content ? <ReactMarkdown>{content}</ReactMarkdown> : null;
+        return content ? <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{content}</ReactMarkdown> : null;
     }, [content]);
 
     return (
