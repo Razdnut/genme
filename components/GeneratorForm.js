@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Wand2, Github } from 'lucide-react';
+import { normalizeRepoUrl } from '@/lib/utils';
 
 /**
  * Collects repository URL, preferred README style, and optional details before triggering generation.
@@ -12,30 +13,6 @@ export default function GeneratorForm({ onGenerate, isGenerating }) {
     const [projectDetails, setProjectDetails] = useState(''); // New state for project details
     const [urlError, setUrlError] = useState(null);
 
-    const normalizeRepoUrl = (rawUrl) => {
-        if (!rawUrl) return null;
-        const trimmed = rawUrl.trim();
-        const candidate = trimmed.startsWith('http') ? trimmed : `https://${trimmed}`;
-
-        try {
-            const parsed = new URL(candidate);
-            const hostname = parsed.hostname.replace(/^www\./, '');
-            if (hostname !== 'github.com') return null;
-
-            const parts = parsed.pathname
-                .replace(/\.git$/, '')
-                .replace(/\/+$/, '')
-                .split('/')
-                .filter(Boolean);
-
-            if (parts.length < 2) return null;
-            const [owner, repo] = parts;
-            return `https://github.com/${owner}/${repo}`;
-        } catch {
-            return null;
-        }
-    };
-
     const handleSubmit = (e) => {
         e.preventDefault();
 
@@ -44,14 +21,14 @@ export default function GeneratorForm({ onGenerate, isGenerating }) {
             setUrlError('GitHub repository URL cannot be empty.');
             return;
         }
-        const normalizedUrl = normalizeRepoUrl(url);
-        if (!normalizedUrl) {
+        const parsed = normalizeRepoUrl(url);
+        if (!parsed) {
             setUrlError('Please enter a valid GitHub repository URL (e.g., https://github.com/username/repo).');
             return;
         }
 
         setUrlError(null); // Clear error if validation passes
-        onGenerate({ url: normalizedUrl, style, projectDetails }); // Pass projectDetails
+        onGenerate({ url: `https://github.com/${parsed.owner}/${parsed.repo}`, style, projectDetails }); // Pass projectDetails
     };
 
     // Handler for URL input change to clear error when user types
