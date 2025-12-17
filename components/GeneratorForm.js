@@ -93,9 +93,25 @@ export default function GeneratorForm({ onGenerate, isGenerating }) {
                     value={projectDetails}
                     onChange={(e) => setProjectDetails(e.target.value)}
                     rows="4"
+                    maxLength="1000"
                     placeholder="Describe your project's purpose, key features, target audience, desired tone, etc."
                     className="input-field"
+                    aria-describedby="char-count"
                 ></textarea>
+                <div className="text-right text-xs text-gray-400">
+                    <span
+                        id="char-count"
+                        aria-live="polite"
+                        className={
+                            projectDetails.length >= 1000
+                                ? 'text-red-400'
+                                : projectDetails.length >= 800
+                                    ? 'text-yellow-400'
+                                    : 'text-gray-400'
+                        }>
+                        {projectDetails.length}/1000
+                    </span>
+                </div>
             </div>
 
             <fieldset className="space-y-2">
