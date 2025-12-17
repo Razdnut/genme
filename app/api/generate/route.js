@@ -24,6 +24,20 @@ const normalizeStyle = (style) => (ALLOWED_STYLES.includes(style) ? style : 'nor
 
 const normalizeProvider = (provider) => (ALLOWED_PROVIDERS.includes(provider) ? provider : 'openai')
 
+const CORS_HEADERS = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+}
+
+const withCors = (responseInit = {}) => ({
+    ...responseInit,
+    headers: {
+        ...CORS_HEADERS,
+        ...(responseInit.headers || {}),
+    },
+})
+
 const sanitizeProjectDetails = (details) => {
     if (!details) return ''
     const trimmed = details
@@ -89,28 +103,37 @@ export async function POST(req) {
     try {
         const contentType = req.headers.get('content-type') || ''
         if (!contentType.includes('application/json')) {
-            return NextResponse.json({ error: 'Content-Type must be application/json' }, { status: 415 })
+            return NextResponse.json(
+                { error: 'Content-Type must be application/json' },
+                withCors({ status: 415 })
+            )
         }
 
         const payload = await req.json()
         const url = payload?.url?.trim()
         if (!url || url.length > MAX_URL_LENGTH) {
-            return NextResponse.json({ error: 'Missing URL or URL is too long' }, { status: 400 })
+            return NextResponse.json(
+                { error: 'Missing URL or URL is too long' },
+                withCors({ status: 400 })
+            )
         }
 
         let apiKey
         try {
             apiKey = sanitizeSecret(payload?.apiKey, 'API key')
         } catch (error) {
-            return NextResponse.json({ error: error.message }, { status: 400 })
+            return NextResponse.json({ error: error.message }, withCors({ status: 400 }))
         }
 
         if (!apiKey) {
-            return NextResponse.json({ error: 'Missing URL or API Key' }, { status: 400 })
+            return NextResponse.json({ error: 'Missing URL or API Key' }, withCors({ status: 400 }))
         }
 
         if (!isValidGithubUrl(url)) {
-            return NextResponse.json({ error: 'Please provide a valid GitHub repository URL.' }, { status: 400 })
+            return NextResponse.json(
+                { error: 'Please provide a valid GitHub repository URL.' },
+                withCors({ status: 400 })
+            )
         }
 
         const provider = normalizeProvider(payload?.provider)
@@ -120,7 +143,7 @@ export async function POST(req) {
         try {
             githubToken = sanitizeSecret(payload?.githubToken, 'GitHub token')
         } catch (error) {
-            return NextResponse.json({ error: error.message }, { status: 400 })
+            return NextResponse.json({ error: error.message }, withCors({ status: 400 }))
         }
 
         let customEndpoint = ''
@@ -128,7 +151,7 @@ export async function POST(req) {
             try {
                 customEndpoint = validateCustomEndpoint(payload?.customEndpoint?.trim())
             } catch (error) {
-                return NextResponse.json({ error: error.message }, { status: 400 })
+                return NextResponse.json({ error: error.message }, withCors({ status: 400 }))
             }
         }
 
@@ -141,7 +164,7 @@ export async function POST(req) {
             const status = error?.message?.toLowerCase().includes('invalid github url') ? 400 : 502
             return NextResponse.json(
                 { error: 'Unable to fetch repository data. Verify the URL and GitHub token.' },
-                { status }
+                withCors({ status })
             )
         }
 
@@ -180,16 +203,23 @@ export async function POST(req) {
         // 3. Stream Response
         const stream = await streamLLMResponse(prompt, apiKey, provider, customEndpoint)
 
-        return new Response(stream, {
+        return new Response(stream, withCors({
             headers: {
                 'Content-Type': 'text/event-stream',
                 'Cache-Control': 'no-cache',
                 'Connection': 'keep-alive',
             },
-        })
+        }))
 
     } catch (error) {
         console.error('Generation Error:', error?.message || error)
-        return NextResponse.json({ error: 'Unexpected error while generating README' }, { status: 500 })
+        return NextResponse.json(
+            { error: 'Unexpected error while generating README' },
+            withCors({ status: 500 })
+        )
     }
+}
+
+export async function OPTIONS() {
+    return NextResponse.json({}, withCors({ status: 200 }))
 }
