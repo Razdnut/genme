@@ -23,7 +23,21 @@ export default function LivePreview({ content }) {
     // This is a significant performance improvement when dealing with large documents,
     // as it avoids re-parsing and re-rendering the entire Markdown tree.
     const memoizedMarkdown = useMemo(() => {
-        return content ? <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{content}</ReactMarkdown> : null;
+        return content ? <ReactMarkdown
+            rehypePlugins={[rehypeSanitize]}
+            components={{
+                a: ({ node, ...props }) => {
+                    // 🛡️ Sentinel: Add security attributes to external links to prevent "tabnabbing".
+                    // This prevents the opened page from accessing `window.opener`.
+                    // We only apply this to absolute URLs, leaving relative/anchor links alone.
+                    if (props.href && (props.href.startsWith('http://') || props.href.startsWith('https://'))) {
+                        return <a {...props} target="_blank" rel="noopener noreferrer" />;
+                    }
+                    // Render internal links as-is.
+                    return <a {...props} />;
+                }
+            }}
+        >{content}</ReactMarkdown> : null;
     }, [content]);
 
     return (
