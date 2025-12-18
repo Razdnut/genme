@@ -75,6 +75,13 @@ const validateCustomEndpoint = (endpoint) => {
     }
 
     const hostname = parsed.hostname.toLowerCase()
+
+    // 🛡️ Sentinel: Prevent IDN homograph attacks to bypass SSRF protection.
+    // Non-ASCII characters in the hostname can be used to craft URLs that
+    // look legitimate but resolve to internal or blocked IPs.
+    if (/[^\x00-\x7F]/.test(hostname)) {
+        throw new Error('Custom endpoint hostname contains invalid characters.')
+    }
     const isIpLiteral = IPV4_HOST.test(hostname) || hostname.includes(':')
     if (BLOCKED_HOSTNAMES.has(hostname) || isIpLiteral || PRIVATE_IP_PATTERNS.some((pattern) => pattern.test(hostname))) {
         throw new Error('Custom endpoint cannot target private or loopback hosts.')
