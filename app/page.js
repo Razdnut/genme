@@ -149,6 +149,7 @@ export default function Home() {
           <button
             onClick={() => setIsSettingsOpen(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-all"
+            aria-label="Open settings"
           >
             <Settings size={16} />
             <span>Settings</span>
